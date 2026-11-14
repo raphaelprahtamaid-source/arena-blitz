@@ -89,14 +89,28 @@ h1 b{color:var(--accent)}
 #hpfill{height:100%;width:100%;background:var(--hp);transition:width .15s}
 #ammo{position:absolute;right:calc(16px + var(--sr));bottom:calc(16px + var(--sb));font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
 #ammo small{font-size:14px;color:var(--dim);margin-left:4px}
-body.touch #vitals{left:50%;transform:translateX(-50%);bottom:auto;top:calc(10px + var(--st))}
+body.touch #vitals{left:50%;transform:translateX(-50%);bottom:auto;top:calc(44px + var(--st))}
 body.touch #hpbar{width:110px}
 body.touch #hpnum{font-size:22px;min-width:40px}
-body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:calc(46px + var(--st));font-size:16px}
+body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:calc(78px + var(--st));font-size:16px}
 @media (orientation:portrait){
+  body.touch #round{top:auto;bottom:calc(250px + var(--sb))}
   body.touch #vitals{left:calc(16px + var(--sl));transform:none;top:auto;bottom:calc(200px + var(--sb))}
   body.touch #ammo{left:auto;right:calc(24px + var(--sr));transform:none;top:auto;bottom:calc(214px + var(--sb))}
 }
+#healInfo{font-size:13px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
+#healInfo.ready{color:var(--hp)}
+body.touch #healInfo{display:none}
+#round{position:absolute;top:calc(10px + var(--st));left:50%;transform:translateX(-50%);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;gap:10px;align-items:baseline}
+#round small{font-size:12px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+#round.low{color:var(--danger)}
+#round:empty{display:none}
+#banner{position:absolute;left:50%;top:24%;transform:translateX(-50%);text-align:center;width:min(90vw,560px);text-shadow:0 2px 10px rgba(0,0,0,.7)}
+#banner h3{margin:0;font-size:clamp(24px,5vw,40px);letter-spacing:.04em;text-transform:uppercase;text-wrap:balance}
+#banner h3 b{color:var(--accent)}
+#banner p{margin:6px 0 0;font-family:var(--body);font-size:15px}
+#healFx{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(91,224,138,.4));opacity:0;transition:opacity .5s}
+#healFx.on{opacity:1;transition:none}
 #hurt{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(255,30,30,.55));opacity:0;transition:opacity .35s}
 #hurt.on{opacity:1;transition:none}
 #death{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(40,0,0,.35)}
@@ -116,6 +130,8 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
 #fireBtn{width:96px;height:96px;right:calc(26px + var(--sr));bottom:calc(34px + var(--sb));font-size:16px;border-color:rgba(255,176,32,.7)}
 #jumpBtn{width:64px;height:64px;right:calc(136px + var(--sr));bottom:calc(30px + var(--sb))}
 #reloadBtn{width:54px;height:54px;right:calc(44px + var(--sr));bottom:calc(146px + var(--sb));font-size:11px}
+#healBtn{width:64px;height:64px;right:calc(136px + var(--sr));bottom:calc(106px + var(--sb));font-size:12px;border-color:rgba(91,224,138,.75);color:var(--hp)}
+#healBtn.cd{border-color:rgba(255,255,255,.2);color:var(--dim)}
 @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
 </style>
 
@@ -140,7 +156,7 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
       <button class="btn" id="botsBtn">Practice vs bots</button>
     </div>
     <p id="status">Checking for online play…</p>
-    <p class="help">Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload.<br>Friends join by opening this page and typing the same match code.</p>
+    <p class="help">Matches are 5 rounds of 1 minute. The first kill wins the round; most rounds wins the match.<br>Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>, tap <kbd>HEAL</kbd> for +50 health. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload, <kbd>E</kbd> heal.<br>Friends join by opening this page and typing the same match code.</p>
   </div>
 </div>
 
@@ -148,6 +164,9 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
   <div id="cross"></div>
   <div id="hitm"></div>
   <div id="hurt"></div>
+  <div id="healFx"></div>
+  <div id="round" class="chip"></div>
+  <div id="banner" hidden><h3 id="bannerTitle"></h3><p id="bannerSub"></p></div>
   <div id="topbar">
     <div id="board" class="chip"></div>
     <div id="rightTop">
@@ -155,7 +174,7 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
       <div id="feed"></div>
     </div>
   </div>
-  <div id="vitals"><span id="hpnum">100</span><div id="hpbar"><div id="hpfill"></div></div></div>
+  <div id="vitals"><span id="hpnum">100</span><div id="hpbar"><div id="hpfill"></div></div><span id="healInfo"></span></div>
   <div id="ammo">24<small>/ 24</small></div>
   <div id="hint" hidden>Click to aim</div>
   <div id="death" hidden><div><h2>Eliminated</h2><p id="deathBy"></p></div></div>
@@ -165,6 +184,7 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
   <div id="joy"><div id="knob"></div></div>
   <div class="tbtn" id="reloadBtn">RELOAD</div>
   <div class="tbtn" id="jumpBtn">JUMP</div>
+  <div class="tbtn" id="healBtn">HEAL</div>
   <div class="tbtn" id="fireBtn">FIRE</div>
 </div>
 
@@ -179,6 +199,8 @@ document.body.classList.toggle('touch', isTouch);
 // ---------------- tuning ----------------
 const R = 0.35, H = 1.75, EYE = 1.6, G = 20, JUMP = 7.2, SPEED = 6.4;
 const MAG = 24, FIRE_DT = 0.11, RELOAD_T = 1.4, BODY = 18, HEAD = 45, RESPAWN = 3000;
+const HEAL_AMT = 50, HEAL_CD = 12;                      // +50 health, 12 s cooldown
+const ROUNDS = 5, ROUND_MS = 60000, BREAK_MS = 4000, MATCH_BREAK_MS = 8000;
 const COLORS = [0xffb020, 0x4fc3ff, 0xff5a7a, 0x7be36b, 0xc792ff, 0xff8a3d, 0x3de0c8, 0xf2f25a];
 const BOT_NAMES = ['Rook', 'Vex', 'Kilo', 'Mara', 'Juno', 'Tank'];
 
@@ -437,16 +459,51 @@ function drawHud() {
   $('hpfill').style.width = Math.max(0, me.hp) + '%';
   $('hpfill').style.background = me.hp > 35 ? 'var(--hp)' : 'var(--danger)';
   $('ammo').innerHTML = me.reload > 0 ? 'RELOADING' : `${me.ammo}<small>/ ${MAG}</small>`;
+  const cd = Math.ceil(me.healCd);
+  const hi = $('healInfo'), hb = $('healBtn');
+  hi.textContent = cd > 0 ? `Heal ${cd}s` : 'E · Heal'; hi.className = cd > 0 ? '' : 'ready';
+  hb.textContent = cd > 0 ? cd + 's' : 'HEAL'; hb.classList.toggle('cd', cd > 0);
+  drawRound();
 }
+function drawRound() {
+  const el = $('round'), ban = $('banner');
+  const left = roundLeft();
+  const secs = Math.ceil(left / 1000), clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  let title = '', sub = '';
+  if (round.ph === 'wait') {
+    el.textContent = '';
+    title = 'Waiting for players'; sub = 'The match starts when someone else joins this match code.';
+  } else {
+    el.innerHTML = '';
+    const lab = document.createElement('small'); lab.textContent = `Round ${round.r}/${ROUNDS}`;
+    const t = document.createElement('span'); t.textContent = round.ph === 'play' ? clock : round.ph === 'over' ? 'Round over' : 'Match over';
+    el.append(lab, t);
+    el.classList.toggle('low', round.ph === 'play' && secs <= 10);
+    if (round.ph === 'play' && ROUND_MS - left < 1500) { title = `Round ${round.r}`; sub = 'First kill wins the round'; }
+    else if (round.ph === 'over') {
+      title = round.win ? `<b>${esc(nameOf(round.win))}</b> wins round ${round.r}` : `Time's up · no winner`;
+      sub = round.r >= ROUNDS ? 'Final results next' : `Round ${round.r + 1} starts in ${secs}`;
+    } else if (round.ph === 'match') {
+      const best = Math.max(0, ...Object.values(round.w));
+      title = round.win ? `<b>${esc(nameOf(round.win))}</b> wins the match` : 'Match drawn';
+      sub = (round.win ? `${best} of ${ROUNDS} rounds · ` : '') + `New match in ${secs}`;
+    }
+  }
+  ban.hidden = !title;
+  if (round.ph === 'over' || round.ph === 'match') $('death').hidden = true;
+  if (title) { $('bannerTitle').innerHTML = title; $('bannerSub').textContent = sub; }
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function drawBoard() {
-  const rows = [{ name: myName, k: me.k, d: me.d, me: true }];
-  if (mode === 'online') for (const r of remotes.values()) rows.push({ name: r.name, k: r.k, d: r.d });
-  else for (const b of bots) rows.push({ name: b.name, k: b.k, d: b.d });
-  rows.sort((a, b) => b.k - a.k || a.d - b.d);
+  const w = id => round.w[id] || 0;
+  const rows = [{ name: myName, k: me.k, d: w(myId()), me: true }];
+  if (mode === 'online') for (const r of remotes.values()) rows.push({ name: r.name, k: r.k, d: w(r.id) });
+  else for (const b of bots) rows.push({ name: b.name, k: b.k, d: w(b.id) });
+  rows.sort((a, b) => b.d - a.d || b.k - a.k);
   const el = $('board'); el.textContent = '';
   const h = document.createElement('div'); h.className = 'h';
   const ht = document.createElement('span'); ht.textContent = mode === 'online' ? `Match ${roomName} · ${rows.length} in` : 'Practice';
-  const hk = document.createElement('span'); hk.textContent = 'K  D';
+  const hk = document.createElement('span'); hk.textContent = 'K  Won';
   h.append(ht, hk); el.append(h);
   for (const r of rows.slice(0, 6)) {
     const d = document.createElement('div'); d.className = 'r' + (r.me ? ' me' : '');
@@ -456,10 +513,91 @@ function drawBoard() {
 }
 
 // ---------------- game state ----------------
-const me = { x: 0, y: 0, z: 0, vy: 0, onGround: false, hp: 100, alive: true, k: 0, d: 0, ds: 0, kb: '', ammo: MAG, reload: 0, next: 0, seq: 0, shots: [] };
+const me = { x: 0, y: 0, z: 0, vy: 0, onGround: false, hp: 100, alive: true, k: 0, d: 0, ds: 0, kb: '', ammo: MAG, reload: 0, next: 0, seq: 0, shots: [], healCd: 0 };
 let yaw = 0, pitch = 0, mode = null, net = null, roomName = '', myName = 'Player', myColor = 0, kick = 0, bob = 0;
 const remotes = new Map();
 const bots = [];
+
+// ---------------- rounds ----------------
+// One player (the "leader": lowest id online, always you in practice) runs the clock and
+// decides round results; everyone else copies the leader's round state from its presence.
+const PH = ['play', 'over', 'match', 'wait'];
+const round = { m: 0, r: 0, ph: 'wait', left: 0, at: 0, w: {}, win: '' };
+let startedKey = '';
+const myId = () => (mode === 'online' ? net?.me() : 'me');
+const roundLeft = () => Math.max(0, round.left - (performance.now() - round.at));
+const canFight = () => round.ph === 'play' || round.ph === 'wait';
+function nameOf(id) {
+  if (id === myId()) return myName;
+  return remotes.get(id)?.name || bots.find(b => b.id === id)?.name || 'Someone';
+}
+function isLeader() {
+  if (mode === 'practice') return true;
+  const id = net?.me(); if (!id) return false;
+  for (const k of remotes.keys()) if (k < id) return false;
+  return true;
+}
+function setRound(ph, ms) { round.ph = ph; round.left = ms; round.at = performance.now(); }
+function onRoundStart() {
+  respawnMe();
+  for (const b of bots) {
+    const s = pickSpawn([...bots.filter(o => o !== b && o.alive), { x: me.x, z: me.z, alive: true }]);
+    Object.assign(b, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, seen: 0, wp: null });
+    b.g.visible = true;
+  }
+}
+function startRound(m, r) {
+  round.m = m; round.r = r; round.win = '';
+  if (r === 1) round.w = {};
+  setRound('play', ROUND_MS);
+  startedKey = m + ':' + r;
+  onRoundStart();
+}
+function noteKill(killer, victim) {
+  if (!isLeader() || round.ph !== 'play' || !killer || killer === victim) return;
+  round.w[killer] = (round.w[killer] || 0) + 1;
+  round.win = killer;
+  setRound('over', BREAK_MS);
+}
+function leaderTick() {
+  const alone = mode === 'online' && remotes.size === 0;
+  if (alone) { if (round.ph !== 'wait') { round.w = {}; round.win = ''; setRound('wait', 0); } return; }
+  const left = roundLeft();
+  if (round.ph === 'wait') startRound(round.m + 1, 1);
+  else if (round.ph === 'play' && left <= 0) { round.win = ''; setRound('over', BREAK_MS); }
+  else if (round.ph === 'over' && left <= 0) {
+    if (round.r < ROUNDS) startRound(round.m, round.r + 1);
+    else {
+      let best = '', bw = 0, tie = false;
+      for (const [id, n] of Object.entries(round.w)) { if (n > bw) { best = id; bw = n; tie = false; } else if (n === bw) tie = true; }
+      round.win = tie ? '' : best;
+      setRound('match', MATCH_BREAK_MS);
+      if (round.win === myId()) killConfirm();
+    }
+  } else if (round.ph === 'match' && left <= 0) startRound(round.m + 1, 1);
+}
+function adoptRound(rd) {
+  if (!Array.isArray(rd) || rd.length < 6) return;
+  const ph = PH[num(rd[2], 3)] || 'wait';
+  round.m = num(rd[0]); round.r = Math.min(ROUNDS, Math.max(0, num(rd[1])));
+  const w = {};
+  if (rd[4] && typeof rd[4] === 'object') for (const [k, v] of Object.entries(rd[4]).slice(0, 32)) w[k] = num(v);
+  round.w = w; round.win = typeof rd[5] === 'string' ? rd[5] : '';
+  setRound(ph, num(rd[3]));
+  const key = round.m + ':' + round.r;
+  if (ph === 'play' && key !== startedKey) { startedKey = key; onRoundStart(); }
+}
+function roundPacket() {
+  return [round.m, round.r, PH.indexOf(round.ph), Math.round(roundLeft()), round.w, round.win];
+}
+setInterval(() => { if (mode && isLeader()) leaderTick(); }, 100);
+
+function heal() {
+  if (!mode || !me.alive || me.healCd > 0 || me.hp >= 100 || !canFight()) return;
+  me.hp = Math.min(100, me.hp + HEAL_AMT); me.healCd = HEAL_CD;
+  $('healFx').classList.add('on'); setTimeout(() => $('healFx').classList.remove('on'), 120);
+  blip(520, .08, .1, 'sine'); setTimeout(() => blip(780, .12, .1, 'sine'), 70);
+}
 
 function pickSpawn(others) {
   let best = SPAWNS[0], bd = -1;
@@ -477,12 +615,12 @@ function othersPositions() {
 }
 function respawnMe() {
   const s = pickSpawn(othersPositions());
-  Object.assign(me, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, ammo: MAG, reload: 0 });
+  Object.assign(me, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, ammo: MAG, reload: 0, healCd: 0 });
   yaw = Math.atan2(s[0], s[2]); pitch = 0;
   $('death').hidden = true; gun.visible = true;
 }
 function takeDamage(dmg, byId, byName) {
-  if (!me.alive) return;
+  if (!me.alive || !canFight()) return;
   me.hp -= dmg; hurtT = .25; $('hurt').classList.add('on');
   blip(180, .12, .15, 'sawtooth');
   if (me.hp <= 0) {
@@ -491,7 +629,8 @@ function takeDamage(dmg, byId, byName) {
     $('deathBy').textContent = `by ${byName} · back in 3`;
     $('death').hidden = false; gun.visible = false;
     input.fire = false;
-    setTimeout(() => { if (mode) respawnMe(); }, RESPAWN);
+    noteKill(byId, myId());
+    setTimeout(() => { if (mode && !me.alive) respawnMe(); }, RESPAWN);
   }
 }
 
@@ -535,21 +674,22 @@ function startReload() { if (me.reload > 0 || me.ammo === MAG || !me.alive) retu
 // ---------------- bots (practice) ----------------
 function lerpAngle(a, b, t) { const d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; }
 function addBot(i) {
-  const b = { kind: 'bot', name: BOT_NAMES[i], x: 0, y: 0, z: 0, vy: 0, onGround: false, yaw: 0, hp: 100, alive: true, k: 0, d: 0, cool: 1, seen: 0, strafe: 1, strT: 0, wp: null, wpT: 0, stuck: false };
+  const b = { kind: 'bot', id: 'bot' + i, name: BOT_NAMES[i], x: 0, y: 0, z: 0, vy: 0, onGround: false, yaw: 0, hp: 100, alive: true, k: 0, d: 0, cool: 1, seen: 0, strafe: 1, strT: 0, wp: null, wpT: 0, stuck: false };
   b.g = makeAvatar(i + 1, b.name);
   const s = pickSpawn([...bots, { x: me.x, z: me.z, alive: true }]);
   Object.assign(b, { x: s[0], y: s[1], z: s[2] });
   bots.push(b);
 }
 function damageBot(b, dmg, killer) {
-  if (!b.alive) return;
+  if (!b.alive || !canFight()) return;
   b.hp -= dmg; b.seen = Math.max(b.seen, .4);
   if (b.hp > 0) return;
   b.alive = false; b.g.visible = false; b.d++;
   if (killer) killer.k++; else { me.k++; killConfirm(); }
   feed(killer ? killer.name : myName, b.name);
+  noteKill(killer ? killer.id : myId(), b.id);
   setTimeout(() => {
-    if (!bots.includes(b)) return;
+    if (!bots.includes(b) || b.alive) return;
     const s = pickSpawn([...bots, { x: me.x, z: me.z, alive: me.alive }]);
     Object.assign(b, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, seen: 0, wp: null });
     b.g.visible = true;
@@ -566,6 +706,7 @@ function randomPoint() {
 }
 function botTick(b, dt) {
   if (!b.alive) return;
+  if (!canFight()) { b.g.position.set(b.x, b.y, b.z); return; }
   const eye = [b.x, b.y + EYE, b.z];
   const cands = [{ isMe: true, x: me.x, y: me.y, z: me.z, alive: me.alive, name: myName }, ...bots.filter(o => o !== b)];
   let tgt = null, td = 1e9;
@@ -595,7 +736,7 @@ function botTick(b, dt) {
       bang(distVol(...eye) * .8, .8);
       if (hit.best) {
         const dmg = hit.best.head ? HEAD : BODY, v = hit.best.e.ref;
-        if (v.isMe) takeDamage(dmg, b.name, b.name); else damageBot(v, dmg, b);
+        if (v.isMe) takeDamage(dmg, b.id, b.name); else damageBot(v, dmg, b);
       }
     }
   } else {
@@ -759,6 +900,7 @@ function syncRemotes() {
       const killer = kb === myId ? myName : (remotes.get(kb)?.name || (typeof kb === 'string' ? str(kb, 'Someone') : 'Someone'));
       feed(killer, r.name);
       if (kb && kb === myId) { me.k++; killConfirm(); }
+      if (typeof kb === 'string') noteKill(kb, p.peer);
     }
     if (Array.isArray(pr.s)) for (const s of pr.s) {
       if (!Array.isArray(s) || s.length < 9) continue;
@@ -772,10 +914,16 @@ function syncRemotes() {
     }
   }
   for (const [id, r] of remotes) if (!seen.has(id)) { dropAvatar(r.g); remotes.delete(id); }
+  // copy the round clock from the leader (lowest id), unless that's us
+  if (myId) {
+    let lead = myId;
+    for (const k of remotes.keys()) if (k < lead) lead = k;
+    if (lead !== myId) adoptRound(remotes.get(lead)?.pres?.rd);
+  }
 }
 function pushPresence() {
   const r2 = v => Math.round(v * 100) / 100;
-  net.setPresence({ n: myName, c: myColor, p: [r2(me.x), r2(me.y), r2(me.z), r2(yaw)], hp: Math.ceil(me.hp), a: me.alive ? 1 : 0, k: me.k, d: me.d, ds: me.ds, kb: me.kb, s: me.shots });
+  net.setPresence({ n: myName, c: myColor, p: [r2(me.x), r2(me.y), r2(me.z), r2(yaw)], hp: Math.ceil(me.hp), a: me.alive ? 1 : 0, k: me.k, d: me.d, ds: me.ds, kb: me.kb, s: me.shots, rd: isLeader() ? roundPacket() : null });
 }
 
 // ---------------- input ----------------
@@ -785,6 +933,7 @@ addEventListener('keydown', e => {
   if (!mode || e.target.tagName === 'INPUT') return;
   keys[e.code] = true;
   if (e.code === 'KeyR') startReload();
+  if (e.code === 'KeyE' || e.code === 'KeyH') heal();
   if (e.code === 'Space') e.preventDefault();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -818,6 +967,7 @@ addEventListener('touchstart', e => {
     if (el?.closest('#fireBtn')) { fireId = t.identifier; input.fire = true; $('fireBtn').classList.add('on'); }
     else if (el?.closest('#jumpBtn')) { input.jump = true; $('jumpBtn').classList.add('on'); }
     else if (el?.closest('#reloadBtn')) startReload();
+    else if (el?.closest('#healBtn')) heal();
     else if (el?.closest('#leave')) leaveGame();
     else if (t.clientX < innerWidth * .45 && joy.id === null) { joy.id = t.identifier; joy.ox = t.clientX; joy.oy = t.clientY; placeJoy(t.clientX, t.clientY); joyEl.classList.add('on'); }
     else lookIds.add(t.identifier);
@@ -871,6 +1021,7 @@ function readName() {
 function enterGame(m) {
   mode = m;
   Object.assign(me, { k: 0, d: 0, ds: 0, kb: '', seq: 0, shots: [] });
+  Object.assign(round, { m: 0, r: 0, w: {}, win: '' }); setRound('wait', 0); startedKey = '';
   respawnMe();
   $('menu').hidden = true; $('hud').hidden = false; $('touch').hidden = !isTouch;
   $('hint').hidden = isTouch;
@@ -934,7 +1085,8 @@ function update(dt, now) {
     input.jump = false;
     if (me.y < -5) respawnMe();
     if (me.reload > 0) { me.reload -= dt; if (me.reload <= 0) { me.reload = 0; me.ammo = MAG; } }
-    if (input.fire && me.reload === 0 && me.ammo > 0 && now / 1000 >= me.next) fire(now / 1000);
+    if (me.healCd > 0) me.healCd = Math.max(0, me.healCd - dt);
+    if (input.fire && canFight() && me.reload === 0 && me.ammo > 0 && now / 1000 >= me.next) fire(now / 1000);
   }
   camera.position.set(me.x, me.y + (me.alive ? EYE : .5), me.z);
   camera.rotation.set(pitch, yaw, me.alive ? 0 : .35);
