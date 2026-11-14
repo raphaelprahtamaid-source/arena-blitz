@@ -248,7 +248,9 @@ M4(20, 2, 21, 3, 0, 1, CRATE); M4(3, 19, 4.2, 20.2, 0, 1, CRATE); M4(11, 19, 12.
 B(-8, 0, -0.6, -6, 1.2, 0.6, COVER); B(6, 0, -0.6, 8, 1.2, 0.6, COVER);
 M4(19, 19, 24, 24, 0, 1.5, PLAT); M4(17, 21, 18, 22.5, 0, 0.5, STEP); M4(18, 21, 19, 22.5, 0, 1, STEP);
 const SPAWNS = [[21.5, 1.5, 21.5], [-21.5, 1.5, 21.5], [21.5, 1.5, -21.5], [-21.5, 1.5, -21.5],
-  [21, 0, 0], [-21, 0, 0], [0, 0, 21], [0, 0, -21], [12, 0, -12], [-12, 0, 12], [0, 2, 0]];
+  [21, 0, 0], [-21, 0, 0], [0, 0, 21], [0, 0, -21], [12, 0, -12], [-12, 0, 12], [0, 2, 0],
+  [12, 0, 18], [-12, 0, 18], [12, 0, -18], [-12, 0, -18], [18, 0, 6], [-18, 0, 6], [18, 0, -6], [-18, 0, -6],
+  [6, 0, 10], [-6, 0, 10], [6, 0, -10], [-6, 0, -10]];
 
 // ---------------- physics ----------------
 function hitBox(b) {
@@ -568,7 +570,7 @@ const bots = [];
 // decides round results; everyone else copies the leader's round state from its presence.
 const PH = ['play', 'over', 'match', 'wait'];
 const TEAM_HEX = [0x4fc3ff, 0xff5a7a], TEAM_CSS = ['var(--blue)', 'var(--red)'], TEAM_NAME = ['Blue', 'Red'];
-const round = { m: 0, r: 0, ph: 'wait', left: 0, at: 0, w: {}, win: '', teams: {} };
+const round = { m: 0, r: 0, ph: 'wait', left: 0, at: 0, w: {}, win: '', teams: {}, sp: {} };
 let startedKey = '', gameType = 'ffa', lastKiller = '';
 const myId = () => (mode === 'online' ? net?.me() : 'me');
 const roundLeft = () => Math.max(0, round.left - (performance.now() - round.at));
@@ -606,10 +608,26 @@ function isLeader() {
   return true;
 }
 function setRound(ph, ms) { round.ph = ph; round.left = ms; round.at = performance.now(); }
+// The leader hands every player their own spawn point each round (teams start on opposite sides).
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function assignSpawns() {
+  const ids = participants().map(p => p.id).filter(Boolean);
+  const all = shuffle(SPAWNS.map((_, i) => i));
+  const sp = {};
+  if (gameType === 'team') {
+    const side = [all.filter(i => SPAWNS[i][2] > 0), all.filter(i => SPAWNS[i][2] < 0)];
+    const mid = all.filter(i => SPAWNS[i][2] === 0);
+    for (const id of ids) {
+      const t = teamOf(id) ?? 0;
+      sp[id] = side[t].length ? side[t].shift() : mid.length ? mid.shift() : all[0];
+    }
+  } else ids.forEach((id, n) => { sp[id] = all[n % all.length]; });
+  round.sp = sp;
+}
 function onRoundStart() {
-  respawnMe();
+  respawnMe(round.sp[myId()]);
   for (const b of bots) {
-    const s = pickSpawn([...bots.filter(o => o !== b && o.alive), { x: me.x, z: me.z, alive: true }]);
+    const s = SPAWNS[round.sp[b.id]] || pickSpawn([...bots.filter(o => o !== b && o.alive), { x: me.x, z: me.z, alive: true }]);
     Object.assign(b, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, seen: 0, wp: null });
     b.g.visible = true;
   }
@@ -618,6 +636,7 @@ function startRound(m, r) {
   round.m = m; round.r = r; round.win = '';
   if (r === 1) { round.w = {}; round.teams = {}; }
   if (gameType === 'team') assignTeams();
+  assignSpawns();
   setRound('play', ROUND_MS);
   startedKey = m + ':' + r;
   onRoundStart();
@@ -665,6 +684,9 @@ function adoptRound(rd) {
   const teams = {};
   if (rd[6] && typeof rd[6] === 'object') for (const [k, v] of Object.entries(rd[6]).slice(0, 64)) if (v === 0 || v === 1) teams[k] = v;
   round.teams = teams;
+  const sp = {};
+  if (rd[7] && typeof rd[7] === 'object') for (const [k, v] of Object.entries(rd[7]).slice(0, 64)) if (Number.isInteger(v) && SPAWNS[v]) sp[k] = v;
+  round.sp = sp;
   setRound(ph, num(rd[3]));
   const key = round.m + ':' + round.r;
   if (ph === 'play' && key !== startedKey) {
@@ -674,7 +696,7 @@ function adoptRound(rd) {
   }
 }
 function roundPacket() {
-  return [round.m, round.r, PH.indexOf(round.ph), Math.round(roundLeft()), round.w, round.win, round.teams];
+  return [round.m, round.r, PH.indexOf(round.ph), Math.round(roundLeft()), round.w, round.win, round.teams, round.sp];
 }
 function spectateUntilNextRound() {
   me.alive = false; me.hp = 0; gun.visible = false; input.fire = false; lastKiller = '';
@@ -708,8 +730,8 @@ function othersPositions() {
   if (mode === 'online') return [...remotes.values()].map(r => ({ x: r.g.position.x, z: r.g.position.z, alive: r.alive }));
   return bots;
 }
-function respawnMe() {
-  const s = pickSpawn(othersPositions());
+function respawnMe(idx) {
+  const s = SPAWNS[idx] || pickSpawn(othersPositions());
   Object.assign(me, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, ammo: MAG, reload: 0, healCd: 0 });
   yaw = Math.atan2(s[0], s[2]); pitch = 0;
   $('death').hidden = true; gun.visible = true;
@@ -1112,7 +1134,7 @@ function readName() {
 function enterGame(m) {
   mode = m;
   Object.assign(me, { k: 0, d: 0, ds: 0, kb: '', seq: 0, shots: [] });
-  Object.assign(round, { m: 0, r: 0, w: {}, win: '', teams: {} }); setRound('wait', 0); startedKey = ''; lastKiller = '';
+  Object.assign(round, { m: 0, r: 0, w: {}, win: '', teams: {}, sp: {} }); setRound('wait', 0); startedKey = ''; lastKiller = '';
   respawnMe();
   $('menu').hidden = true; $('hud').hidden = false; $('touch').hidden = !isTouch;
   $('hint').hidden = isTouch;
