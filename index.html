@@ -10,6 +10,7 @@
   --bg:#0c1317; --panel:rgba(11,19,24,.88); --line:rgba(220,236,240,.14);
   --fg:#eef4f6; --dim:#94a7b0; --accent:#ffb020; --accent-ink:#1d1300;
   --hp:#5be08a; --danger:#ff4d4d; --glass:rgba(255,255,255,.10);
+  --blue:#4fc3ff; --red:#ff5a7a;
   --display:'Chakra Petch',ui-rounded,system-ui,sans-serif;
   --body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
   --sl:env(safe-area-inset-left,0px); --sr:env(safe-area-inset-right,0px);
@@ -34,7 +35,12 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,7vw,46px);let
 h1 b{color:var(--accent)}
 .sub{margin:0;color:var(--dim);font-size:14px}
 .field{display:grid;gap:6px}
-.field label{font-family:var(--display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(0,0,0,.35)}
+.seg button{flex:1;padding:10px 8px;background:transparent;border:0;font-family:var(--display);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:14px;color:var(--dim)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--glass);color:var(--accent)}
+.seg-note{margin:0;font-size:12.5px;color:var(--dim)}
+.field label,.field .lab{font-family:var(--display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .field input{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;width:100%;box-sizing:border-box}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>*{flex:1 1 140px}
@@ -89,10 +95,10 @@ h1 b{color:var(--accent)}
 #hpfill{height:100%;width:100%;background:var(--hp);transition:width .15s}
 #ammo{position:absolute;right:calc(16px + var(--sr));bottom:calc(16px + var(--sb));font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
 #ammo small{font-size:14px;color:var(--dim);margin-left:4px}
-body.touch #vitals{left:50%;transform:translateX(-50%);bottom:auto;top:calc(44px + var(--st))}
+body.touch #vitals{left:50%;transform:translateX(-50%);bottom:auto;top:calc(74px + var(--st))}
 body.touch #hpbar{width:110px}
 body.touch #hpnum{font-size:22px;min-width:40px}
-body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:calc(78px + var(--st));font-size:16px}
+body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:calc(106px + var(--st));font-size:16px}
 @media (orientation:portrait){
   body.touch #round{top:auto;bottom:calc(250px + var(--sb))}
   body.touch #vitals{left:calc(16px + var(--sl));transform:none;top:auto;bottom:calc(200px + var(--sb))}
@@ -101,7 +107,10 @@ body.touch #ammo{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:
 #healInfo{font-size:13px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
 #healInfo.ready{color:var(--hp)}
 body.touch #healInfo{display:none}
-#round{position:absolute;top:calc(10px + var(--st));left:50%;transform:translateX(-50%);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;gap:10px;align-items:baseline}
+#round{position:absolute;top:calc(10px + var(--st));left:50%;transform:translateX(-50%);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 10px;align-items:baseline}
+#round .teamrow{flex-basis:100%;display:flex;justify-content:center;gap:10px}
+@media (max-width:720px){ #hpbar{width:80px} }
+@media (max-width:600px){ body:not(.touch) #round{top:auto;bottom:calc(64px + var(--sb))} }
 #round small{font-size:12px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
 #round.low{color:var(--danger)}
 #round:empty{display:none}
@@ -113,8 +122,8 @@ body.touch #healInfo{display:none}
 #healFx.on{opacity:1;transition:none}
 #hurt{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(255,30,30,.55));opacity:0;transition:opacity .35s}
 #hurt.on{opacity:1;transition:none}
-#death{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(40,0,0,.35)}
-#death h2{margin:0;font-size:40px;letter-spacing:.06em;text-transform:uppercase}
+#death{position:absolute;left:0;right:0;bottom:calc(120px + var(--sb));display:grid;place-items:center;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+#death h2{margin:0;font-size:30px;letter-spacing:.06em;text-transform:uppercase;color:#ffd0d0}
 #death p{margin:6px 0 0;color:var(--fg);font-family:var(--body)}
 #hint{position:absolute;left:50%;top:62%;transform:translateX(-50%);font-family:var(--body);font-size:14px;color:var(--fg);background:rgba(8,14,18,.7);padding:8px 12px;border-radius:8px}
 
@@ -151,12 +160,20 @@ body.touch #healInfo{display:none}
       <label for="roomIn">Match code</label>
       <input id="roomIn" maxlength="16" value="public" autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
+    <div class="field">
+      <span class="lab" id="typeLab">Game type</span>
+      <div class="seg" role="group" aria-labelledby="typeLab">
+        <button type="button" id="ffaBtn" aria-pressed="true">Free for all</button>
+        <button type="button" id="teamBtn" aria-pressed="false">Teams</button>
+      </div>
+      <p class="seg-note" id="typeNote">Everyone for themselves. The last one standing wins the round.</p>
+    </div>
     <div class="row">
       <button class="btn primary" id="onlineBtn">Play online</button>
       <button class="btn" id="botsBtn">Practice vs bots</button>
     </div>
     <p id="status">Checking for online play…</p>
-    <p class="help">Matches are 5 rounds of 1 minute. The first kill wins the round; most rounds wins the match.<br>Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>, tap <kbd>HEAL</kbd> for +50 health. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload, <kbd>E</kbd> heal.<br>Friends join by opening this page and typing the same match code.</p>
+    <p class="help">Matches are 5 rounds of 1 minute. No respawns during a round: the last player (or team) standing wins it, and most rounds wins the match.<br>Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>, tap <kbd>HEAL</kbd> for +50 health. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload, <kbd>E</kbd> heal.<br>Friends join by opening this page and typing the same match code.</p>
   </div>
 </div>
 
@@ -177,7 +194,7 @@ body.touch #healInfo{display:none}
   <div id="vitals"><span id="hpnum">100</span><div id="hpbar"><div id="hpfill"></div></div><span id="healInfo"></span></div>
   <div id="ammo">24<small>/ 24</small></div>
   <div id="hint" hidden>Click to aim</div>
-  <div id="death" hidden><div><h2>Eliminated</h2><p id="deathBy"></p></div></div>
+  <div id="death" hidden><div><h2 id="deathTitle">Eliminated</h2><p id="deathBy"></p></div></div>
 </div>
 
 <div id="touch" hidden>
@@ -387,9 +404,11 @@ function makeAvatar(colorIdx, name) {
   const visor = new THREE.Mesh(avatarGeo.visor, visorMat); visor.position.set(0, 1.66, -.21); g.add(visor);
   const gm = new THREE.Mesh(avatarGeo.gun, agunMat); gm.position.set(.32, 1.1, -.35); g.add(gm);
   g.userData.label = makeLabel(name); g.add(g.userData.label);
+  g.userData.mat = mat; g.userData.hex = COLORS[colorIdx % COLORS.length];
   scene.add(g);
   return g;
 }
+function tint(g, hex) { if (g.userData.hex !== hex) { g.userData.mat.color.setHex(hex); g.userData.hex = hex; } }
 function relabel(g, name) {
   g.remove(g.userData.label); g.userData.label.material.map.dispose(); g.userData.label.material.dispose();
   g.userData.label = makeLabel(name); g.add(g.userData.label);
@@ -478,16 +497,37 @@ function drawRound() {
     const lab = document.createElement('small'); lab.textContent = `Round ${round.r}/${ROUNDS}`;
     const t = document.createElement('span'); t.textContent = round.ph === 'play' ? clock : round.ph === 'over' ? 'Round over' : 'Match over';
     el.append(lab, t);
+    const myTeam = teamOf(myId());
+    if (gameType === 'team') {
+      const row = document.createElement('div'); row.className = 'teamrow';
+      const sc = document.createElement('small');
+      sc.innerHTML = `<span style="color:var(--blue)">Blue ${round.w.T0 || 0}</span> – <span style="color:var(--red)">${round.w.T1 || 0} Red</span>`;
+      row.append(sc);
+      if (myTeam !== null) { const yt = document.createElement('small'); yt.textContent = 'You: ' + TEAM_NAME[myTeam]; yt.style.color = TEAM_CSS[myTeam]; row.append(yt); }
+      el.append(row);
+    }
     el.classList.toggle('low', round.ph === 'play' && secs <= 10);
-    if (round.ph === 'play' && ROUND_MS - left < 1500) { title = `Round ${round.r}`; sub = 'First kill wins the round'; }
-    else if (round.ph === 'over') {
-      title = round.win ? `<b>${esc(nameOf(round.win))}</b> wins round ${round.r}` : `Time's up · no winner`;
+    const hasWinner = round.win && round.win !== '-';
+    const whoWins = hasWinner ? `<b>${esc(nameOf(round.win))}</b>` : '';
+    if (round.ph === 'play' && ROUND_MS - left < 1800) {
+      title = `Round ${round.r}`;
+      sub = gameType === 'team' ? (myTeam !== null ? `You're on the ${TEAM_NAME[myTeam]} team · last team standing wins` : 'Last team standing wins') : 'Last one standing wins the round';
+    } else if (round.ph === 'over') {
+      title = hasWinner ? (gameType === 'team' ? `${whoWins} wins round ${round.r}` : `${whoWins} is the last one standing`) : (round.win === '-' ? 'Nobody survived' : `Time's up · no winner`);
       sub = round.r >= ROUNDS ? 'Final results next' : `Round ${round.r + 1} starts in ${secs}`;
     } else if (round.ph === 'match') {
       const best = Math.max(0, ...Object.values(round.w));
-      title = round.win ? `<b>${esc(nameOf(round.win))}</b> wins the match` : 'Match drawn';
+      title = hasWinner ? `${whoWins} wins the match` : 'Match drawn';
       sub = (round.win ? `${best} of ${ROUNDS} rounds · ` : '') + `New match in ${secs}`;
     }
+  }
+  // out of the round: watch someone still alive
+  const dead = mode && !me.alive && round.ph === 'play';
+  $('death').hidden = !dead;
+  if (dead) {
+    const t = spectateTarget();
+    $('deathTitle').textContent = lastKiller ? `Eliminated by ${lastKiller}` : 'Out this round';
+    $('deathBy').textContent = (t ? `Watching ${nameOf(t.id)} · ` : '') + 'you’re back next round';
   }
   ban.hidden = !title;
   if (round.ph === 'over' || round.ph === 'match') $('death').hidden = true;
@@ -495,19 +535,24 @@ function drawRound() {
 }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function drawBoard() {
+  const team = gameType === 'team';
   const w = id => round.w[id] || 0;
-  const rows = [{ name: myName, k: me.k, d: w(myId()), me: true }];
-  if (mode === 'online') for (const r of remotes.values()) rows.push({ name: r.name, k: r.k, d: w(r.id) });
-  else for (const b of bots) rows.push({ name: b.name, k: b.k, d: w(b.id) });
-  rows.sort((a, b) => b.d - a.d || b.k - a.k);
+  const row = (id, name, k, d, alive, isMe) => ({ name, k, d: team ? d : w(id), me: isMe, alive, t: teamOf(id) });
+  const rows = [row(myId(), myName, me.k, me.d, me.alive, true)];
+  if (mode === 'online') for (const r of remotes.values()) rows.push(row(r.id, r.name, r.k, r.d, r.alive));
+  else for (const b of bots) rows.push(row(b.id, b.name, b.k, b.d, b.alive));
+  rows.sort((a, b) => team ? ((a.t ?? 2) - (b.t ?? 2) || b.k - a.k) : (b.d - a.d || b.k - a.k));
   const el = $('board'); el.textContent = '';
   const h = document.createElement('div'); h.className = 'h';
-  const ht = document.createElement('span'); ht.textContent = mode === 'online' ? `Match ${roomName} · ${rows.length} in` : 'Practice';
-  const hk = document.createElement('span'); hk.textContent = 'K  Won';
+  const kind = team ? 'Teams' : 'Free for all';
+  const ht = document.createElement('span'); ht.textContent = mode === 'online' ? `${kind} · ${roomName} · ${rows.length} in` : `Practice · ${kind}`;
+  const hk = document.createElement('span'); hk.textContent = team ? 'K  D' : 'K  Won';
   h.append(ht, hk); el.append(h);
-  for (const r of rows.slice(0, 6)) {
+  for (const r of rows.slice(0, 8)) {
     const d = document.createElement('div'); d.className = 'r' + (r.me ? ' me' : '');
     for (const v of [r.name, r.k, r.d]) { const s = document.createElement('span'); s.textContent = v; d.append(s); }
+    if (r.t !== null) d.firstChild.style.color = TEAM_CSS[r.t];
+    if (round.ph === 'play' && !r.alive) d.style.opacity = .4;
     el.append(d);
   }
 }
@@ -522,14 +567,37 @@ const bots = [];
 // One player (the "leader": lowest id online, always you in practice) runs the clock and
 // decides round results; everyone else copies the leader's round state from its presence.
 const PH = ['play', 'over', 'match', 'wait'];
-const round = { m: 0, r: 0, ph: 'wait', left: 0, at: 0, w: {}, win: '' };
-let startedKey = '';
+const TEAM_HEX = [0x4fc3ff, 0xff5a7a], TEAM_CSS = ['var(--blue)', 'var(--red)'], TEAM_NAME = ['Blue', 'Red'];
+const round = { m: 0, r: 0, ph: 'wait', left: 0, at: 0, w: {}, win: '', teams: {} };
+let startedKey = '', gameType = 'ffa', lastKiller = '';
 const myId = () => (mode === 'online' ? net?.me() : 'me');
 const roundLeft = () => Math.max(0, round.left - (performance.now() - round.at));
 const canFight = () => round.ph === 'play' || round.ph === 'wait';
+const teamOf = id => (gameType === 'team' && id != null && (round.teams[id] === 0 || round.teams[id] === 1) ? round.teams[id] : null);
+const sameTeam = (a, b) => { const ta = teamOf(a); return ta !== null && ta === teamOf(b); };
 function nameOf(id) {
+  if (id === 'T0' || id === 'T1') return TEAM_NAME[+id[1]] + ' team';
   if (id === myId()) return myName;
   return remotes.get(id)?.name || bots.find(b => b.id === id)?.name || 'Someone';
+}
+// everyone in the match: [{id, alive, x, y, z, yaw}]
+function participants() {
+  const list = [{ id: myId(), alive: me.alive, x: me.x, y: me.y, z: me.z, yaw }];
+  if (mode === 'online') for (const r of remotes.values()) list.push({ id: r.id, alive: r.alive, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, yaw: r.g.rotation.y });
+  else for (const b of bots) list.push({ id: b.id, alive: b.alive, x: b.x, y: b.y, z: b.z, yaw: b.yaw });
+  return list;
+}
+function assignTeams() {
+  const ids = participants().map(p => p.id).filter(Boolean);
+  const t = {}, count = [0, 0];
+  for (const id of ids) if (round.teams[id] === 0 || round.teams[id] === 1) { t[id] = round.teams[id]; count[t[id]]++; }
+  for (const id of ids) if (!(id in t)) { const k = count[0] <= count[1] ? 0 : 1; t[id] = k; count[k]++; }
+  while (Math.abs(count[0] - count[1]) > 1) {                 // rebalance after people leave
+    const big = count[0] > count[1] ? 0 : 1;
+    const mover = ids.filter(id => t[id] === big).pop();
+    t[mover] = 1 - big; count[big]--; count[1 - big]++;
+  }
+  round.teams = t;
 }
 function isLeader() {
   if (mode === 'practice') return true;
@@ -548,23 +616,34 @@ function onRoundStart() {
 }
 function startRound(m, r) {
   round.m = m; round.r = r; round.win = '';
-  if (r === 1) round.w = {};
+  if (r === 1) { round.w = {}; round.teams = {}; }
+  if (gameType === 'team') assignTeams();
   setRound('play', ROUND_MS);
   startedKey = m + ':' + r;
   onRoundStart();
 }
-function noteKill(killer, victim) {
-  if (!isLeader() || round.ph !== 'play' || !killer || killer === victim) return;
-  round.w[killer] = (round.w[killer] || 0) + 1;
-  round.win = killer;
+function endRound(win) {   // win: player id, 'T0'/'T1', '-' (nobody survived) or '' (time's up)
+  if (win && win !== '-') round.w[win] = (round.w[win] || 0) + 1;
+  round.win = win || '';
   setRound('over', BREAK_MS);
 }
 function leaderTick() {
   const alone = mode === 'online' && remotes.size === 0;
-  if (alone) { if (round.ph !== 'wait') { round.w = {}; round.win = ''; setRound('wait', 0); } return; }
+  if (alone) { if (round.ph !== 'wait') { round.w = {}; round.win = ''; round.teams = {}; setRound('wait', 0); } return; }
   const left = roundLeft();
   if (round.ph === 'wait') startRound(round.m + 1, 1);
-  else if (round.ph === 'play' && left <= 0) { round.win = ''; setRound('over', BREAK_MS); }
+  else if (round.ph === 'play' && left <= 0) endRound('');
+  else if (round.ph === 'play' && ROUND_MS - left > 2000) {   // short grace so everyone has respawned
+    const ps = participants();
+    if (gameType === 'team') {
+      const alive = [0, 0];
+      for (const p of ps) { const t = teamOf(p.id); if (t !== null && p.alive) alive[t]++; }
+      if (!alive[0] || !alive[1]) endRound(alive[0] ? 'T0' : alive[1] ? 'T1' : '-');
+    } else {
+      const alive = ps.filter(p => p.alive);
+      if (ps.length >= 2 && alive.length <= 1) endRound(alive[0]?.id || '-');
+    }
+  }
   else if (round.ph === 'over' && left <= 0) {
     if (round.r < ROUNDS) startRound(round.m, round.r + 1);
     else {
@@ -572,7 +651,7 @@ function leaderTick() {
       for (const [id, n] of Object.entries(round.w)) { if (n > bw) { best = id; bw = n; tie = false; } else if (n === bw) tie = true; }
       round.win = tie ? '' : best;
       setRound('match', MATCH_BREAK_MS);
-      if (round.win === myId()) killConfirm();
+      if (round.win === myId() || (round.win === 'T' + teamOf(myId()))) killConfirm();
     }
   } else if (round.ph === 'match' && left <= 0) startRound(round.m + 1, 1);
 }
@@ -583,12 +662,28 @@ function adoptRound(rd) {
   const w = {};
   if (rd[4] && typeof rd[4] === 'object') for (const [k, v] of Object.entries(rd[4]).slice(0, 32)) w[k] = num(v);
   round.w = w; round.win = typeof rd[5] === 'string' ? rd[5] : '';
+  const teams = {};
+  if (rd[6] && typeof rd[6] === 'object') for (const [k, v] of Object.entries(rd[6]).slice(0, 64)) if (v === 0 || v === 1) teams[k] = v;
+  round.teams = teams;
   setRound(ph, num(rd[3]));
   const key = round.m + ':' + round.r;
-  if (ph === 'play' && key !== startedKey) { startedKey = key; onRoundStart(); }
+  if (ph === 'play' && key !== startedKey) {
+    startedKey = key;
+    if (ROUND_MS - round.left < 3000) onRoundStart();
+    else spectateUntilNextRound();                            // joined mid-round
+  }
 }
 function roundPacket() {
-  return [round.m, round.r, PH.indexOf(round.ph), Math.round(roundLeft()), round.w, round.win];
+  return [round.m, round.r, PH.indexOf(round.ph), Math.round(roundLeft()), round.w, round.win, round.teams];
+}
+function spectateUntilNextRound() {
+  me.alive = false; me.hp = 0; gun.visible = false; input.fire = false; lastKiller = '';
+}
+function colorFor(id, idx) { const t = teamOf(id); return t !== null ? TEAM_HEX[t] : COLORS[(idx || 0) % COLORS.length]; }
+function spectateTarget() {
+  const mine = teamOf(myId());
+  const alive = participants().slice(1).filter(p => p.alive);
+  return alive.find(p => mine !== null && teamOf(p.id) === mine) || alive[0] || null;
 }
 setInterval(() => { if (mode && isLeader()) leaderTick(); }, 100);
 
@@ -626,18 +721,19 @@ function takeDamage(dmg, byId, byName) {
   if (me.hp <= 0) {
     me.hp = 0; me.alive = false; me.d++; me.ds++; me.kb = byId;
     feed(byName, myName);
-    $('deathBy').textContent = `by ${byName} · back in 3`;
-    $('death').hidden = false; gun.visible = false;
+    lastKiller = byName;
+    gun.visible = false;
     input.fire = false;
-    noteKill(byId, myId());
-    setTimeout(() => { if (mode && !me.alive) respawnMe(); }, RESPAWN);
+    // respawn only while waiting for players; in a round you're out until the next one
+    setTimeout(() => { if (mode && !me.alive && round.ph === 'wait') respawnMe(); }, RESPAWN);
   }
 }
 
 // ---------------- shooting ----------------
-function targets() {
-  if (mode === 'online') return [...remotes.values()].map(r => ({ kind: 'remote', id: r.id, ref: r, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, alive: r.alive }));
-  return bots.map(b => ({ kind: 'bot', ref: b, x: b.x, y: b.y, z: b.z, alive: b.alive }));
+function targets() {   // teammates are skipped, so there's no friendly fire
+  const mine = myId();
+  if (mode === 'online') return [...remotes.values()].filter(r => !sameTeam(r.id, mine)).map(r => ({ kind: 'remote', id: r.id, ref: r, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, alive: r.alive }));
+  return bots.filter(b => !sameTeam(b.id, mine)).map(b => ({ kind: 'bot', ref: b, x: b.x, y: b.y, z: b.z, alive: b.alive }));
 }
 const tmpV = new THREE.Vector3(), tmpW = new THREE.Vector3();
 let moveAmt = 0;
@@ -675,7 +771,8 @@ function startReload() { if (me.reload > 0 || me.ammo === MAG || !me.alive) retu
 function lerpAngle(a, b, t) { const d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; }
 function addBot(i) {
   const b = { kind: 'bot', id: 'bot' + i, name: BOT_NAMES[i], x: 0, y: 0, z: 0, vy: 0, onGround: false, yaw: 0, hp: 100, alive: true, k: 0, d: 0, cool: 1, seen: 0, strafe: 1, strT: 0, wp: null, wpT: 0, stuck: false };
-  b.g = makeAvatar(i + 1, b.name);
+  b.c = i + 1;
+  b.g = makeAvatar(b.c, b.name);
   const s = pickSpawn([...bots, { x: me.x, z: me.z, alive: true }]);
   Object.assign(b, { x: s[0], y: s[1], z: s[2] });
   bots.push(b);
@@ -687,13 +784,6 @@ function damageBot(b, dmg, killer) {
   b.alive = false; b.g.visible = false; b.d++;
   if (killer) killer.k++; else { me.k++; killConfirm(); }
   feed(killer ? killer.name : myName, b.name);
-  noteKill(killer ? killer.id : myId(), b.id);
-  setTimeout(() => {
-    if (!bots.includes(b) || b.alive) return;
-    const s = pickSpawn([...bots, { x: me.x, z: me.z, alive: me.alive }]);
-    Object.assign(b, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, seen: 0, wp: null });
-    b.g.visible = true;
-  }, RESPAWN);
 }
 function canSee(o, t) {
   const v = [t[0] - o[0], t[1] - o[1], t[2] - o[2]], dist = Math.hypot(...v);
@@ -708,7 +798,8 @@ function botTick(b, dt) {
   if (!b.alive) return;
   if (!canFight()) { b.g.position.set(b.x, b.y, b.z); return; }
   const eye = [b.x, b.y + EYE, b.z];
-  const cands = [{ isMe: true, x: me.x, y: me.y, z: me.z, alive: me.alive, name: myName }, ...bots.filter(o => o !== b)];
+  const cands = [{ isMe: true, id: 'me', x: me.x, y: me.y, z: me.z, alive: me.alive, name: myName }, ...bots.filter(o => o !== b)]
+    .filter(q => !sameTeam(q.id, b.id));
   let tgt = null, td = 1e9;
   for (const q of cands) {
     if (!q.alive) continue;
@@ -883,7 +974,8 @@ function syncRemotes() {
     if (!r) {
       const shots = Array.isArray(pr.s) ? pr.s : [];
       r = { id: p.peer, name: str(pr.n), ds: num(pr.ds), lastSeq: Math.max(0, ...shots.map(s => num(s?.[0]))), k: 0, d: 0, alive: true, t: [0, 0, 0, 0], fresh: true };
-      r.g = makeAvatar(Math.abs(Math.floor(num(pr.c))), r.name);
+      r.c = Math.abs(Math.floor(num(pr.c)));
+      r.g = makeAvatar(r.c, r.name);
       remotes.set(p.peer, r);
     }
     if (r.pres === pr) continue;
@@ -900,7 +992,6 @@ function syncRemotes() {
       const killer = kb === myId ? myName : (remotes.get(kb)?.name || (typeof kb === 'string' ? str(kb, 'Someone') : 'Someone'));
       feed(killer, r.name);
       if (kb && kb === myId) { me.k++; killConfirm(); }
-      if (typeof kb === 'string') noteKill(kb, p.peer);
     }
     if (Array.isArray(pr.s)) for (const s of pr.s) {
       if (!Array.isArray(s) || s.length < 9) continue;
@@ -1021,7 +1112,7 @@ function readName() {
 function enterGame(m) {
   mode = m;
   Object.assign(me, { k: 0, d: 0, ds: 0, kb: '', seq: 0, shots: [] });
-  Object.assign(round, { m: 0, r: 0, w: {}, win: '' }); setRound('wait', 0); startedKey = '';
+  Object.assign(round, { m: 0, r: 0, w: {}, win: '', teams: {} }); setRound('wait', 0); startedKey = ''; lastKiller = '';
   respawnMe();
   $('menu').hidden = true; $('hud').hidden = false; $('touch').hidden = !isTouch;
   $('hint').hidden = isTouch;
@@ -1039,7 +1130,9 @@ $('onlineBtn').onclick = async () => {
   const btn = $('onlineBtn'); btn.disabled = true; btn.textContent = 'Joining…';
   try {
     const r = await roomReady;
-    net = r ? claudeNet(await r.join('ab-' + roomName)) : window.Peer ? peerNet(roomName) : localNet(roomName);
+    gameType = pickedType;
+    const key = roomName + (gameType === 'team' ? '-team' : '');   // FFA and team matches are separate
+    net = r ? claudeNet(await r.join('ab-' + key)) : window.Peer ? peerNet(key) : localNet(key);
     enterGame('online');
   } catch (err) {
     $('status').textContent = `Could not join that match (${err?.code || 'error'}). Try again in a moment.`; $('status').className = '';
@@ -1047,9 +1140,21 @@ $('onlineBtn').onclick = async () => {
 };
 $('botsBtn').onclick = () => {
   audioOn(); readName(); roomName = '';
+  gameType = pickedType;
   enterGame('practice');
-  for (let i = 0; i < 4; i++) addBot(i);
+  for (let i = 0; i < (gameType === 'team' ? 5 : 4); i++) addBot(i);   // teams: you + 2 bots vs 3 bots
 };
+let pickedType = 'ffa';
+function pickType(t) {
+  pickedType = t;
+  $('ffaBtn').setAttribute('aria-pressed', t === 'ffa');
+  $('teamBtn').setAttribute('aria-pressed', t === 'team');
+  $('typeNote').textContent = t === 'team'
+    ? 'Blue vs Red, picked automatically. No friendly fire. The last team with anyone alive wins the round.'
+    : 'Everyone for themselves. The last one standing wins the round.';
+}
+$('ffaBtn').onclick = () => pickType('ffa');
+$('teamBtn').onclick = () => pickType('team');
 function leaveGame() {
   if (!mode) return;
   if (net) { net.leave(); net = null; }
@@ -1088,8 +1193,15 @@ function update(dt, now) {
     if (me.healCd > 0) me.healCd = Math.max(0, me.healCd - dt);
     if (input.fire && canFight() && me.reload === 0 && me.ammo > 0 && now / 1000 >= me.next) fire(now / 1000);
   }
-  camera.position.set(me.x, me.y + (me.alive ? EYE : .5), me.z);
-  camera.rotation.set(pitch, yaw, me.alive ? 0 : .35);
+  const spec = !me.alive && round.ph === 'play' ? spectateTarget() : null;
+  if (spec) {   // chase camera behind the player you're watching
+    const fx = -Math.sin(spec.yaw), fz = -Math.cos(spec.yaw);
+    camera.position.set(spec.x - fx * 3.2, spec.y + 2.4, spec.z - fz * 3.2);
+    camera.lookAt(spec.x + fx * 2, spec.y + 1.4, spec.z + fz * 2);
+  } else {
+    camera.position.set(me.x, me.y + (me.alive ? EYE : .5), me.z);
+    camera.rotation.set(pitch, yaw, me.alive ? 0 : .35);
+  }
 
   // viewmodel
   kick = Math.max(0, kick - dt * 12);
@@ -1106,9 +1218,10 @@ function update(dt, now) {
       p.x += (r.t[0] - p.x) * k; p.y += (r.t[1] - p.y) * k; p.z += (r.t[2] - p.z) * k;
       r.g.rotation.y = lerpAngle(r.g.rotation.y, r.t[3], k);
       r.g.visible = r.alive;
+      tint(r.g, colorFor(r.id, r.c));
     }
   } else {
-    for (const b of bots) botTick(b, dt);
+    for (const b of bots) { botTick(b, dt); tint(b.g, colorFor(b.id, b.c)); }
   }
 
   if (hitT > 0 && (hitT -= dt) <= 0) $('hitm').classList.remove('show');
