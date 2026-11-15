@@ -77,7 +77,20 @@ h1 b{color:var(--accent)}
 #board .h{font-size:11px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;justify-content:space-between;gap:10px}
 #rightTop{display:grid;gap:8px;justify-items:end}
 #leave{pointer-events:auto;font-size:12px;padding:6px 10px}
-.netrow{display:flex;gap:8px;align-items:center}
+.netrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.hbtn{pointer-events:auto;font-family:var(--display);font-size:12px;padding:6px 10px;color:var(--fg)}
+#panel{pointer-events:auto;width:min(290px,calc(100vw - 32px));padding:12px;display:grid;gap:8px;position:relative;z-index:5;font-family:var(--body);background:var(--panel);max-height:calc(100vh - 80px);overflow:auto;touch-action:pan-y}
+#panel[hidden]{display:none!important}
+#panelTeam,#panelFfa{display:grid;gap:8px}
+#panelTeam[hidden],#panelFfa[hidden]{display:none!important}
+.plab{margin:0;font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.pnote{margin:0;font-size:12.5px;color:var(--dim)}
+.prow{display:flex;gap:8px}
+.pbtn{flex:1;border:1px solid var(--line);background:var(--glass);border-radius:8px;padding:10px 8px;font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.04em}
+.pbtn.blue{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 55%,transparent)}
+.pbtn.red{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,transparent)}
+.seg button.blue[aria-pressed="true"]{color:var(--blue)}
+.seg button.red[aria-pressed="true"]{color:var(--red)}
 #net{font-size:12px;padding:6px 10px;display:flex;align-items:center;gap:7px}
 #net:empty{display:none}
 #net::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--dim)}
@@ -168,12 +181,20 @@ body.touch #healInfo{display:none}
       </div>
       <p class="seg-note" id="typeNote">Everyone for themselves. The last one standing wins the round.</p>
     </div>
+    <div class="field" id="sideField" hidden>
+      <span class="lab" id="sideLab">Your team</span>
+      <div class="seg" role="group" aria-labelledby="sideLab">
+        <button type="button" id="sideAuto" aria-pressed="true">Auto</button>
+        <button type="button" id="sideBlue" aria-pressed="false" class="blue">Blue</button>
+        <button type="button" id="sideRed" aria-pressed="false" class="red">Red</button>
+      </div>
+    </div>
     <div class="row">
       <button class="btn primary" id="onlineBtn">Play online</button>
       <button class="btn" id="botsBtn">Practice vs bots</button>
     </div>
     <p id="status">Checking for online play…</p>
-    <p class="help">Matches are 5 rounds of 1 minute. No respawns during a round: the last player (or team) standing wins it, and most rounds wins the match.<br>Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>, tap <kbd>HEAL</kbd> for +50 health. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload, <kbd>E</kbd> heal.<br>Friends join by opening this page and typing the same match code.</p>
+    <p class="help">Matches are 5 rounds of 1 minute. No respawns during a round: the last player (or team) standing wins it, and most rounds wins the match.<br>Phone: left thumb moves, right thumb aims, hold <kbd>FIRE</kbd>, tap <kbd>HEAL</kbd> for +50 health. Landscape works best.<br>Desktop: click to lock the mouse, <kbd>WASD</kbd> move, <kbd>Space</kbd> jump, click to shoot, <kbd>R</kbd> reload, <kbd>E</kbd> heal.<br>Friends join by opening this page and typing the same match code. In a game, tap <kbd>Team &amp; bots</kbd> to switch sides or add bots (desktop: <kbd>T</kbd>).</p>
   </div>
 </div>
 
@@ -187,7 +208,32 @@ body.touch #healInfo{display:none}
   <div id="topbar">
     <div id="board" class="chip"></div>
     <div id="rightTop">
-      <div class="netrow"><span id="net" class="chip"></span><button id="leave" class="chip">Leave</button></div>
+      <div class="netrow"><span id="net" class="chip"></span><button id="panelBtn" class="chip hbtn" data-act="panel">Team &amp; bots</button><button id="leave" class="chip hbtn" data-act="leave">Leave</button></div>
+      <div id="panel" class="chip" hidden>
+        <div id="panelTeam">
+          <p class="plab">Play for</p>
+          <div class="seg">
+            <button type="button" id="pAuto" data-act="sideAuto">Auto</button>
+            <button type="button" id="pBlue" data-act="sideBlue" class="blue">Blue</button>
+            <button type="button" id="pRed" data-act="sideRed" class="red">Red</button>
+          </div>
+          <p class="pnote" id="panelNow"></p>
+          <p class="plab">Add a bot</p>
+          <div class="prow">
+            <button type="button" class="pbtn blue" data-act="botBlue">+ Blue bot</button>
+            <button type="button" class="pbtn red" data-act="botRed">+ Red bot</button>
+          </div>
+        </div>
+        <div id="panelFfa">
+          <p class="plab">Bots</p>
+          <div class="prow"><button type="button" class="pbtn" data-act="bot">+ Add bot</button></div>
+        </div>
+        <p class="pnote" id="panelBots"></p>
+        <div class="prow">
+          <button type="button" class="pbtn" data-act="botsOff">Remove my bots</button>
+          <button type="button" class="pbtn" data-act="close">Done</button>
+        </div>
+      </div>
       <div id="feed"></div>
     </div>
   </div>
@@ -219,7 +265,8 @@ const MAG = 24, FIRE_DT = 0.11, RELOAD_T = 1.4, BODY = 18, HEAD = 45, RESPAWN = 
 const HEAL_AMT = 50, HEAL_CD = 12;                      // +50 health, 12 s cooldown
 const ROUNDS = 5, ROUND_MS = 60000, BREAK_MS = 4000, MATCH_BREAK_MS = 8000;
 const COLORS = [0xffb020, 0x4fc3ff, 0xff5a7a, 0x7be36b, 0xc792ff, 0xff8a3d, 0x3de0c8, 0xf2f25a];
-const BOT_NAMES = ['Rook', 'Vex', 'Kilo', 'Mara', 'Juno', 'Tank'];
+const BOT_NAMES = ['Rook', 'Vex', 'Kilo', 'Mara', 'Juno', 'Tank', 'Nova', 'Pike'];
+const MAX_BOTS_ONLINE = 3, MAX_BOTS_PRACTICE = 7;
 
 // ---------------- map ----------------
 const boxes = [];
@@ -539,10 +586,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 function drawBoard() {
   const team = gameType === 'team';
   const w = id => round.w[id] || 0;
-  const row = (id, name, k, d, alive, isMe) => ({ name, k, d: team ? d : w(id), me: isMe, alive, t: teamOf(id) });
-  const rows = [row(myId(), myName, me.k, me.d, me.alive, true)];
-  if (mode === 'online') for (const r of remotes.values()) rows.push(row(r.id, r.name, r.k, r.d, r.alive));
-  else for (const b of bots) rows.push(row(b.id, b.name, b.k, b.d, b.alive));
+  const rows = participants().map(p => ({ name: p.name, k: p.k, d: team ? p.d : w(p.id), me: p.isMe, alive: p.alive, t: teamOf(p.id) }));
   rows.sort((a, b) => team ? ((a.t ?? 2) - (b.t ?? 2) || b.k - a.k) : (b.d - a.d || b.k - a.k));
   const el = $('board'); el.textContent = '';
   const h = document.createElement('div'); h.className = 'h';
@@ -580,31 +624,39 @@ const sameTeam = (a, b) => { const ta = teamOf(a); return ta !== null && ta === 
 function nameOf(id) {
   if (id === 'T0' || id === 'T1') return TEAM_NAME[+id[1]] + ' team';
   if (id === myId()) return myName;
-  return remotes.get(id)?.name || bots.find(b => b.id === id)?.name || 'Someone';
+  return remotes.get(id)?.name || bots.find(b => gid(b) === id)?.name || 'Someone';
 }
-// everyone in the match: [{id, alive, x, y, z, yaw}]
+// a bot's id as everyone sees it: online it's "<owner>~<bot>", so it's unique across players
+const gid = b => (mode === 'online' ? (net?.me() || '?') + '~' + b.id : b.id);
+let myPref = null;                                            // team you asked for: null = auto, 0 = Blue, 1 = Red
+const isPref = v => v === 0 || v === 1;
+// everyone in the match (you, your bots, other players and their bots)
 function participants() {
-  const list = [{ id: myId(), alive: me.alive, x: me.x, y: me.y, z: me.z, yaw }];
-  if (mode === 'online') for (const r of remotes.values()) list.push({ id: r.id, alive: r.alive, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, yaw: r.g.rotation.y });
-  else for (const b of bots) list.push({ id: b.id, alive: b.alive, x: b.x, y: b.y, z: b.z, yaw: b.yaw });
+  const list = [{ id: myId(), isMe: true, name: myName, k: me.k, d: me.d, tp: myPref, alive: me.alive, x: me.x, y: me.y, z: me.z, yaw }];
+  for (const b of bots) list.push({ id: gid(b), name: b.name, k: b.k, d: b.d, tp: b.tp, alive: b.alive, x: b.x, y: b.y, z: b.z, yaw: b.yaw });
+  if (mode === 'online') for (const r of remotes.values()) list.push({ id: r.id, name: r.name, k: r.k, d: r.d, tp: r.tp, alive: r.alive, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, yaw: r.g.rotation.y });
   return list;
 }
+// Players (and bots) who picked a side get it; everyone on Auto fills in to keep teams even.
 function assignTeams() {
-  const ids = participants().map(p => p.id).filter(Boolean);
-  const t = {}, count = [0, 0];
-  for (const id of ids) if (round.teams[id] === 0 || round.teams[id] === 1) { t[id] = round.teams[id]; count[t[id]]++; }
-  for (const id of ids) if (!(id in t)) { const k = count[0] <= count[1] ? 0 : 1; t[id] = k; count[k]++; }
-  while (Math.abs(count[0] - count[1]) > 1) {                 // rebalance after people leave
+  const ps = participants().filter(p => p.id);
+  const t = {}, count = [0, 0], autos = [];
+  for (const p of ps) if (isPref(p.tp)) { t[p.id] = p.tp; count[p.tp]++; }
+  for (const p of ps) if (!(p.id in t) && isPref(round.teams[p.id])) { t[p.id] = round.teams[p.id]; count[t[p.id]]++; autos.push(p.id); }
+  for (const p of ps) if (!(p.id in t)) { const k = count[0] <= count[1] ? 0 : 1; t[p.id] = k; count[k]++; autos.push(p.id); }
+  for (let guard = 0; Math.abs(count[0] - count[1]) > 1 && guard < 64; guard++) {   // rebalance using Auto players only
     const big = count[0] > count[1] ? 0 : 1;
-    const mover = ids.filter(id => t[id] === big).pop();
+    const mover = autos.filter(id => t[id] === big).pop();
+    if (!mover) break;
     t[mover] = 1 - big; count[big]--; count[1 - big]++;
   }
   round.teams = t;
 }
+const realPeers = () => [...remotes.keys()].filter(k => !k.includes('~'));
 function isLeader() {
   if (mode === 'practice') return true;
   const id = net?.me(); if (!id) return false;
-  for (const k of remotes.keys()) if (k < id) return false;
+  for (const k of realPeers()) if (k < id) return false;
   return true;
 }
 function setRound(ph, ms) { round.ph = ph; round.left = ms; round.at = performance.now(); }
@@ -627,7 +679,7 @@ function assignSpawns() {
 function onRoundStart() {
   respawnMe(round.sp[myId()]);
   for (const b of bots) {
-    const s = SPAWNS[round.sp[b.id]] || pickSpawn([...bots.filter(o => o !== b && o.alive), { x: me.x, z: me.z, alive: true }]);
+    const s = SPAWNS[round.sp[gid(b)]] || pickSpawn([...bots.filter(o => o !== b && o.alive), { x: me.x, z: me.z, alive: true }]);
     Object.assign(b, { x: s[0], y: s[1], z: s[2], vy: 0, hp: 100, alive: true, seen: 0, wp: null });
     b.g.visible = true;
   }
@@ -647,7 +699,7 @@ function endRound(win) {   // win: player id, 'T0'/'T1', '-' (nobody survived) o
   setRound('over', BREAK_MS);
 }
 function leaderTick() {
-  const alone = mode === 'online' && remotes.size === 0;
+  const alone = participants().length < 2;
   if (alone) { if (round.ph !== 'wait') { round.w = {}; round.win = ''; round.teams = {}; setRound('wait', 0); } return; }
   const left = roundLeft();
   if (round.ph === 'wait') startRound(round.m + 1, 1);
@@ -742,6 +794,7 @@ function takeDamage(dmg, byId, byName) {
   blip(180, .12, .15, 'sawtooth');
   if (me.hp <= 0) {
     me.hp = 0; me.alive = false; me.d++; me.ds++; me.kb = byId;
+    const kbot = bots.find(b => gid(b) === byId); if (kbot) kbot.k++;
     feed(byName, myName);
     lastKiller = byName;
     gun.visible = false;
@@ -754,8 +807,9 @@ function takeDamage(dmg, byId, byName) {
 // ---------------- shooting ----------------
 function targets() {   // teammates are skipped, so there's no friendly fire
   const mine = myId();
-  if (mode === 'online') return [...remotes.values()].filter(r => !sameTeam(r.id, mine)).map(r => ({ kind: 'remote', id: r.id, ref: r, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, alive: r.alive }));
-  return bots.filter(b => !sameTeam(b.id, mine)).map(b => ({ kind: 'bot', ref: b, x: b.x, y: b.y, z: b.z, alive: b.alive }));
+  const list = bots.filter(b => !sameTeam(gid(b), mine)).map(b => ({ kind: 'bot', id: gid(b), ref: b, x: b.x, y: b.y, z: b.z, alive: b.alive }));
+  if (mode === 'online') for (const r of remotes.values()) if (!sameTeam(r.id, mine)) list.push({ kind: 'remote', id: r.id, ref: r, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, alive: r.alive });
+  return list;
 }
 const tmpV = new THREE.Vector3(), tmpW = new THREE.Vector3();
 let moveAmt = 0;
@@ -776,7 +830,7 @@ function fire(now) {
   if (hit.best) {
     dmg = hit.best.head ? HEAD : BODY;
     hitmarker(hit.best.head);
-    if (hit.best.e.kind === 'bot') damageBot(hit.best.e.ref, dmg, null);
+    if (hit.best.e.kind === 'bot') damageBot(hit.best.e.ref, dmg, myId(), myName);
     else victim = hit.best.e.id;
   }
   if (mode === 'online') {
@@ -789,23 +843,45 @@ function fire(now) {
 }
 function startReload() { if (me.reload > 0 || me.ammo === MAG || !me.alive) return; me.reload = RELOAD_T; blip(300, .08, .08, 'triangle'); }
 
-// ---------------- bots (practice) ----------------
+// ---------------- bots ----------------
+// Bots run on the device of whoever added them. Online, that player shares each bot's state
+// (position, health, shots) with everyone, so the bot looks and fights like a normal player.
 function lerpAngle(a, b, t) { const d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; }
-function addBot(i) {
-  const b = { kind: 'bot', id: 'bot' + i, name: BOT_NAMES[i], x: 0, y: 0, z: 0, vy: 0, onGround: false, yaw: 0, hp: 100, alive: true, k: 0, d: 0, cool: 1, seen: 0, strafe: 1, strT: 0, wp: null, wpT: 0, stuck: false };
-  b.c = i + 1;
+let botSeq = 0;
+function addBot(tp = null, quiet = false) {
+  const cap = mode === 'online' ? MAX_BOTS_ONLINE : MAX_BOTS_PRACTICE;
+  if (bots.length >= cap) { note(`You can run up to ${cap} bots`); return null; }
+  const used = new Set(bots.map(b => b.name));
+  const name = (mode === 'online' ? 'Bot ' : '') + (BOT_NAMES.find(n => !used.has((mode === 'online' ? 'Bot ' : '') + n)) || 'Bot');
+  const n = botSeq++;
+  const b = { kind: 'bot', id: 'b' + n, name, tp: isPref(tp) ? tp : null, x: 0, y: 0, z: 0, vy: 0, onGround: false, yaw: 0, hp: 100, alive: true, k: 0, d: 0, ds: 0, kb: '', seq: 0, shots: [], cool: 1, seen: 0, strafe: 1, strT: 0, wp: null, wpT: 0, stuck: false };
+  b.c = (n % (COLORS.length - 1)) + 1;
   b.g = makeAvatar(b.c, b.name);
   const s = pickSpawn([...bots, { x: me.x, z: me.z, alive: true }]);
   Object.assign(b, { x: s[0], y: s[1], z: s[2] });
   bots.push(b);
+  if (round.ph === 'play') { b.alive = false; b.g.visible = false; }   // mid-round: joins next round
+  if (!quiet) {
+    const side = gameType === 'team' ? (isPref(b.tp) ? ` for ${TEAM_NAME[b.tp]}` : '') : '';
+    note(`${b.name} added${side}` + (round.ph === 'play' ? ' · plays from next round' : ''));
+  }
+  return b;
 }
-function damageBot(b, dmg, killer) {
+function removeBots() {
+  if (!bots.length) { note('You have no bots to remove'); return; }
+  for (const b of bots) dropAvatar(b.g);
+  note(`Removed ${bots.length} bot${bots.length > 1 ? 's' : ''}`);
+  bots.length = 0;
+}
+// killerId: whoever fired. Online, if it's another player they count the kill themselves.
+function damageBot(b, dmg, killerId, killerName) {
   if (!b.alive || !canFight()) return;
   b.hp -= dmg; b.seen = Math.max(b.seen, .4);
   if (b.hp > 0) return;
-  b.alive = false; b.g.visible = false; b.d++;
-  if (killer) killer.k++; else { me.k++; killConfirm(); }
-  feed(killer ? killer.name : myName, b.name);
+  b.alive = false; b.g.visible = false; b.d++; b.ds++; b.kb = killerId || '';
+  if (killerId === myId()) { me.k++; killConfirm(); }
+  else { const kb = bots.find(o => gid(o) === killerId); if (kb) kb.k++; }
+  feed(killerName || 'Someone', b.name);
 }
 function canSee(o, t) {
   const v = [t[0] - o[0], t[1] - o[1], t[2] - o[2]], dist = Math.hypot(...v);
@@ -819,9 +895,11 @@ function randomPoint() {
 function botTick(b, dt) {
   if (!b.alive) return;
   if (!canFight()) { b.g.position.set(b.x, b.y, b.z); return; }
-  const eye = [b.x, b.y + EYE, b.z];
-  const cands = [{ isMe: true, id: 'me', x: me.x, y: me.y, z: me.z, alive: me.alive, name: myName }, ...bots.filter(o => o !== b)]
-    .filter(q => !sameTeam(q.id, b.id));
+  const eye = [b.x, b.y + EYE, b.z], bid = gid(b);
+  const cands = [{ kind: 'me', id: myId(), x: me.x, y: me.y, z: me.z, alive: me.alive },
+    ...bots.filter(o => o !== b).map(o => ({ kind: 'bot', id: gid(o), ref: o, x: o.x, y: o.y, z: o.z, alive: o.alive })),
+    ...(mode === 'online' ? [...remotes.values()].map(r => ({ kind: 'remote', id: r.id, ref: r, x: r.g.position.x, y: r.g.position.y, z: r.g.position.z, alive: r.alive })) : [])]
+    .filter(q => !sameTeam(q.id, bid));
   let tgt = null, td = 1e9;
   for (const q of cands) {
     if (!q.alive) continue;
@@ -842,14 +920,22 @@ function botTick(b, dt) {
       b.cool = .3 + Math.random() * .35;
       const sp = .07;
       const d = norm([tgt.x - eye[0] + (Math.random() - .5) * sp * td * 2, tgt.y + 1.1 - eye[1] + (Math.random() - .5) * sp * td * 2, tgt.z - eye[2] + (Math.random() - .5) * sp * td * 2]);
-      const ents = cands.map(q => ({ ref: q, x: q.x, y: q.y, z: q.z, alive: q.alive }));
-      const hit = rayEnts(eye, d, ents, rayWorld(eye, d));
+      const hit = rayEnts(eye, d, cands, rayWorld(eye, d));
       const end = eye.map((v, i) => v + d[i] * hit.t);
       tracer(new THREE.Vector3(b.x + Math.cos(b.yaw) * .3, b.y + 1.15, b.z - Math.sin(b.yaw) * .3), new THREE.Vector3(...end), 0xff9a6a);
       bang(distVol(...eye) * .8, .8);
+      let victim = 0, dmg = 0;
       if (hit.best) {
-        const dmg = hit.best.head ? HEAD : BODY, v = hit.best.e.ref;
-        if (v.isMe) takeDamage(dmg, b.id, b.name); else damageBot(v, dmg, b);
+        const e = hit.best.e; dmg = hit.best.head ? HEAD : BODY;
+        if (e.kind === 'me') takeDamage(dmg, bid, b.name);
+        else if (e.kind === 'bot') damageBot(e.ref, dmg, bid, b.name);
+        else victim = e.id;                                   // another player's: they apply it
+      }
+      if (mode === 'online') {
+        const r2 = v => Math.round(v * 100) / 100;
+        b.seq++;
+        b.shots.push([b.seq, ...eye.map(r2), ...end.map(r2), victim, victim ? dmg : 0, hit.best?.head ? 1 : 0]);
+        if (b.shots.length > 3) b.shots.shift();
       }
     }
   } else {
@@ -985,58 +1071,69 @@ setInterval(() => {
 const num = (v, d = 0) => (typeof v === 'number' && isFinite(v) ? v : d);
 const str = (v, d = 'Player') => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 14) : d);
 
+// One remote "entity" = another player, or one of their bots (id "<owner>~<bot>").
+function syncEntity(id, pr, seen, mine) {
+  if (!pr || typeof pr !== 'object' || !Array.isArray(pr.p) || pr.p.length < 4) return;
+  seen.add(id);
+  let r = remotes.get(id);
+  if (!r) {
+    const shots = Array.isArray(pr.s) ? pr.s : [];
+    r = { id, name: str(pr.n), ds: num(pr.ds), lastSeq: Math.max(0, ...shots.map(s => num(s?.[0]))), k: 0, d: 0, alive: true, t: [0, 0, 0, 0], fresh: true, tp: null };
+    r.c = Math.abs(Math.floor(num(pr.c)));
+    r.g = makeAvatar(r.c, r.name);
+    remotes.set(id, r);
+  }
+  if (r.pres === pr) return;
+  r.pres = pr;
+  r.t = pr.p.slice(0, 4).map(v => num(v));
+  r.alive = !!pr.a; r.k = num(pr.k); r.d = num(pr.d); r.tp = isPref(pr.tp) ? pr.tp : null;
+  const name = str(pr.n);
+  if (name !== r.name) { r.name = name; relabel(r.g, name); }
+  if (r.fresh) { r.g.position.set(r.t[0], r.t[1], r.t[2]); r.g.rotation.y = r.t[3]; r.fresh = false; }
+  const ds = num(pr.ds);
+  if (ds > r.ds) {
+    r.ds = ds;
+    const kb = pr.kb;
+    const killer = kb === mine ? myName : nameOf(kb);
+    feed(killer, r.name);
+    if (kb && kb === mine) { me.k++; killConfirm(); }
+    else { const kbot = bots.find(b => gid(b) === kb); if (kbot) kbot.k++; }
+  }
+  if (Array.isArray(pr.s)) for (const s of pr.s) {
+    if (!Array.isArray(s) || s.length < 9) continue;
+    const seq = num(s[0]);
+    if (seq <= r.lastSeq) continue;
+    r.lastSeq = seq;
+    const o = s.slice(1, 4).map(v => num(v)), e = s.slice(4, 7).map(v => num(v));
+    tracer(new THREE.Vector3(o[0], o[1] - .3, o[2]), new THREE.Vector3(e[0], e[1], e[2]), 0xffc06a);
+    bang(distVol(o[0], o[1], o[2]), .9);
+    const dmg = Math.min(60, Math.max(0, num(s[8])));
+    if (mine && s[7] === mine) takeDamage(dmg, id, r.name);
+    else if (typeof s[7] === 'string') { const tb = bots.find(b => gid(b) === s[7]); if (tb) damageBot(tb, dmg, id, r.name); }
+  }
+}
 function syncRemotes() {
-  const myId = net.me();
+  const mine = net.me();
   const seen = new Set();
   for (const p of net.peers()) {
     const pr = p.presence;
-    if (!pr || !Array.isArray(pr.p) || pr.p.length < 4) continue;
-    seen.add(p.peer);
-    let r = remotes.get(p.peer);
-    if (!r) {
-      const shots = Array.isArray(pr.s) ? pr.s : [];
-      r = { id: p.peer, name: str(pr.n), ds: num(pr.ds), lastSeq: Math.max(0, ...shots.map(s => num(s?.[0]))), k: 0, d: 0, alive: true, t: [0, 0, 0, 0], fresh: true };
-      r.c = Math.abs(Math.floor(num(pr.c)));
-      r.g = makeAvatar(r.c, r.name);
-      remotes.set(p.peer, r);
-    }
-    if (r.pres === pr) continue;
-    r.pres = pr;
-    r.t = pr.p.slice(0, 4).map(v => num(v));
-    r.alive = !!pr.a; r.k = num(pr.k); r.d = num(pr.d);
-    const name = str(pr.n);
-    if (name !== r.name) { r.name = name; relabel(r.g, name); }
-    if (r.fresh) { r.g.position.set(r.t[0], r.t[1], r.t[2]); r.g.rotation.y = r.t[3]; r.fresh = false; }
-    const ds = num(pr.ds);
-    if (ds > r.ds) {
-      r.ds = ds;
-      const kb = pr.kb;
-      const killer = kb === myId ? myName : (remotes.get(kb)?.name || (typeof kb === 'string' ? str(kb, 'Someone') : 'Someone'));
-      feed(killer, r.name);
-      if (kb && kb === myId) { me.k++; killConfirm(); }
-    }
-    if (Array.isArray(pr.s)) for (const s of pr.s) {
-      if (!Array.isArray(s) || s.length < 9) continue;
-      const seq = num(s[0]);
-      if (seq <= r.lastSeq) continue;
-      r.lastSeq = seq;
-      const o = s.slice(1, 4).map(v => num(v)), e = s.slice(4, 7).map(v => num(v));
-      tracer(new THREE.Vector3(o[0], o[1] - .3, o[2]), new THREE.Vector3(e[0], e[1], e[2]), 0xffc06a);
-      bang(distVol(o[0], o[1], o[2]), .9);
-      if (myId && s[7] === myId) takeDamage(Math.min(60, Math.max(0, num(s[8]))), p.peer, r.name);
+    syncEntity(p.peer, pr, seen, mine);
+    if (pr && Array.isArray(pr.b)) for (const e of pr.b.slice(0, 6)) {
+      if (e && typeof e.id === 'string' && /^[a-z0-9]{1,8}$/.test(e.id)) syncEntity(p.peer + '~' + e.id, e, seen, mine);
     }
   }
   for (const [id, r] of remotes) if (!seen.has(id)) { dropAvatar(r.g); remotes.delete(id); }
-  // copy the round clock from the leader (lowest id), unless that's us
-  if (myId) {
-    let lead = myId;
-    for (const k of remotes.keys()) if (k < lead) lead = k;
-    if (lead !== myId) adoptRound(remotes.get(lead)?.pres?.rd);
+  // copy the round clock from the leader (lowest player id), unless that's us
+  if (mine) {
+    let lead = mine;
+    for (const k of realPeers()) if (k < lead) lead = k;
+    if (lead !== mine) adoptRound(remotes.get(lead)?.pres?.rd);
   }
 }
 function pushPresence() {
   const r2 = v => Math.round(v * 100) / 100;
-  net.setPresence({ n: myName, c: myColor, p: [r2(me.x), r2(me.y), r2(me.z), r2(yaw)], hp: Math.ceil(me.hp), a: me.alive ? 1 : 0, k: me.k, d: me.d, ds: me.ds, kb: me.kb, s: me.shots, rd: isLeader() ? roundPacket() : null });
+  const b = bots.map(o => ({ id: o.id, n: o.name, c: o.c, p: [r2(o.x), r2(o.y), r2(o.z), r2(o.yaw)], a: o.alive ? 1 : 0, k: o.k, d: o.d, ds: o.ds, kb: o.kb, s: o.shots, tp: o.tp }));
+  net.setPresence({ n: myName, c: myColor, p: [r2(me.x), r2(me.y), r2(me.z), r2(yaw)], hp: Math.ceil(me.hp), a: me.alive ? 1 : 0, k: me.k, d: me.d, ds: me.ds, kb: me.kb, s: me.shots, tp: myPref, b, rd: isLeader() ? roundPacket() : null });
 }
 
 // ---------------- input ----------------
@@ -1047,6 +1144,8 @@ addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.code === 'KeyR') startReload();
   if (e.code === 'KeyE' || e.code === 'KeyH') heal();
+  if (e.code === 'KeyB') doAct('bot');
+  if (e.code === 'KeyT') doAct('panel');
   if (e.code === 'Space') e.preventDefault();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -1081,7 +1180,8 @@ addEventListener('touchstart', e => {
     else if (el?.closest('#jumpBtn')) { input.jump = true; $('jumpBtn').classList.add('on'); }
     else if (el?.closest('#reloadBtn')) startReload();
     else if (el?.closest('#healBtn')) heal();
-    else if (el?.closest('#leave')) leaveGame();
+    else if (el?.closest('[data-act]')) doAct(el.closest('[data-act]').dataset.act);
+    else if (el?.closest('#panel')) { /* tap on the panel's background: ignore */ }
     else if (t.clientX < innerWidth * .45 && joy.id === null) { joy.id = t.identifier; joy.ox = t.clientX; joy.oy = t.clientY; placeJoy(t.clientX, t.clientY); joyEl.classList.add('on'); }
     else lookIds.add(t.identifier);
   }
@@ -1136,7 +1236,7 @@ function enterGame(m) {
   Object.assign(me, { k: 0, d: 0, ds: 0, kb: '', seq: 0, shots: [] });
   Object.assign(round, { m: 0, r: 0, w: {}, win: '', teams: {}, sp: {} }); setRound('wait', 0); startedKey = ''; lastKiller = '';
   respawnMe();
-  $('menu').hidden = true; $('hud').hidden = false; $('touch').hidden = !isTouch;
+  $('menu').hidden = true; $('hud').hidden = false; $('touch').hidden = !isTouch; $('panel').hidden = true; botSeq = 0;
   $('hint').hidden = isTouch;
   if (!isTouch) $('hint').textContent = 'Click to aim';
   drawBoard(); drawNet();
@@ -1164,19 +1264,67 @@ $('botsBtn').onclick = () => {
   audioOn(); readName(); roomName = '';
   gameType = pickedType;
   enterGame('practice');
-  for (let i = 0; i < (gameType === 'team' ? 5 : 4); i++) addBot(i);   // teams: you + 2 bots vs 3 bots
+  for (let i = 0; i < (gameType === 'team' ? 5 : 4); i++) addBot(null, true);   // teams: you + 2 bots vs 3 bots
 };
 let pickedType = 'ffa';
 function pickType(t) {
   pickedType = t;
   $('ffaBtn').setAttribute('aria-pressed', t === 'ffa');
   $('teamBtn').setAttribute('aria-pressed', t === 'team');
+  $('sideField').hidden = t !== 'team';
   $('typeNote').textContent = t === 'team'
-    ? 'Blue vs Red, picked automatically. No friendly fire. The last team with anyone alive wins the round.'
+    ? 'Blue vs Red. No friendly fire. The last team with anyone alive wins the round.'
     : 'Everyone for themselves. The last one standing wins the round.';
+}
+function pickSide(v) {
+  myPref = isPref(v) ? v : null;
+  for (const [id, val] of [['sideAuto', null], ['sideBlue', 0], ['sideRed', 1]]) $(id).setAttribute('aria-pressed', myPref === val);
 }
 $('ffaBtn').onclick = () => pickType('ffa');
 $('teamBtn').onclick = () => pickType('team');
+$('sideAuto').onclick = () => pickSide(null);
+$('sideBlue').onclick = () => pickSide(0);
+$('sideRed').onclick = () => pickSide(1);
+
+// ---------- in-game "Team & bots" panel ----------
+let noteT = null;
+function note(text) {               // short message in the kill feed area
+  const el = document.createElement('div'); el.textContent = text;
+  const f = $('feed'); f.prepend(el);
+  while (f.children.length > 4) f.lastChild.remove();
+  setTimeout(() => { el.style.opacity = 0; setTimeout(() => el.remove(), 700); }, 4000);
+}
+function drawPanel() {
+  const team = gameType === 'team';
+  $('panelTeam').hidden = !team;
+  $('panelFfa').hidden = team;
+  for (const [id, val] of [['pAuto', null], ['pBlue', 0], ['pRed', 1]]) $(id).setAttribute('aria-pressed', myPref === val);
+  const now = teamOf(myId());
+  $('panelNow').textContent = team ? (now !== null ? `You're on ${TEAM_NAME[now]}` : 'Team is picked when the round starts') + (isPref(myPref) && myPref !== now ? ` · switching to ${TEAM_NAME[myPref]} next round` : '') : '';
+  const cap = mode === 'online' ? MAX_BOTS_ONLINE : MAX_BOTS_PRACTICE;
+  $('panelBots').textContent = `Your bots: ${bots.length} of ${cap}` + (mode === 'online' ? ' · they play from your device' : '');
+}
+function doAct(act) {
+  if (!mode) return;
+  if (act === 'leave') return leaveGame();
+  if (act === 'panel' || act === 'close') {
+    const p = $('panel'); p.hidden = act === 'close' ? true : !p.hidden;
+    $('touch').hidden = !isTouch || !p.hidden;                // touch buttons would cover the panel
+    input.fire = false; fireId = null; joy.id = null; resetJoy();
+    if (!p.hidden) { drawPanel(); if (locked()) document.exitPointerLock(); }
+    return;
+  }
+  if (act === 'bot') addBot(gameType === 'team' ? teamOf(myId()) : null);
+  if (act === 'botBlue') addBot(0);
+  if (act === 'botRed') addBot(1);
+  if (act === 'botsOff') removeBots();
+  if (act === 'sideAuto' || act === 'sideBlue' || act === 'sideRed') {
+    pickSide(act === 'sideBlue' ? 0 : act === 'sideRed' ? 1 : null);
+    note(isPref(myPref) ? `You'll play for ${TEAM_NAME[myPref]} from next round` : 'Team set to Auto');
+  }
+  drawPanel();
+}
+for (const el of document.querySelectorAll('[data-act]')) el.addEventListener('click', () => doAct(el.dataset.act));
 function leaveGame() {
   if (!mode) return;
   if (net) { net.leave(); net = null; }
@@ -1185,10 +1333,9 @@ function leaveGame() {
   mode = null; input.fire = false;
   if (locked()) document.exitPointerLock();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  $('menu').hidden = false; $('hud').hidden = true; $('touch').hidden = true; $('death').hidden = true;
+  $('menu').hidden = false; $('hud').hidden = true; $('touch').hidden = true; $('death').hidden = true; $('panel').hidden = true;
   $('feed').textContent = '';
 }
-$('leave').onclick = leaveGame;
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight, false);
@@ -1242,14 +1389,13 @@ function update(dt, now) {
       r.g.visible = r.alive;
       tint(r.g, colorFor(r.id, r.c));
     }
-  } else {
-    for (const b of bots) { botTick(b, dt); tint(b.g, colorFor(b.id, b.c)); }
   }
+  for (const b of bots) { botTick(b, dt); tint(b.g, colorFor(gid(b), b.c)); }
 
   if (hitT > 0 && (hitT -= dt) <= 0) $('hitm').classList.remove('show');
   if (hurtT > 0 && (hurtT -= dt) <= 0) $('hurt').classList.remove('on');
   boardAcc += dt;
-  if (boardAcc > .25) { boardAcc = 0; drawBoard(); drawNet(); }
+  if (boardAcc > .25) { boardAcc = 0; drawBoard(); drawNet(); if (!$('panel').hidden) drawPanel(); }
   drawHud();
 }
 function frame(now) {

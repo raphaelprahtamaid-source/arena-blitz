@@ -6,7 +6,9 @@ A small 3D arena shooter that runs in the browser, on phones and desktops.
 
 Game types (pick one in the menu):
 - **Free for all**: last one standing wins the round.
-- **Teams**: Blue vs Red, picked automatically, no friendly fire. The last team with anyone alive wins the round.
+- **Teams**: Blue vs Red, no friendly fire. Pick Blue, Red or Auto (Auto fills whichever side keeps teams even). The last team with anyone alive wins the round.
+
+In a game, **Team & bots** (desktop: T) lets you switch sides (from the next round) and add bots to Blue or Red, or to a free-for-all. Online, bots run on the device of the player who added them (up to 3 each) and everyone else sees them as normal players.
 
 A match is 5 rounds of 1 minute. There are no respawns during a round: if you're eliminated you watch a player who's still alive until the next round. Most rounds won takes the match.
 
